@@ -1,122 +1,139 @@
 const fs = require('fs');
 const path = require('path');
 const superagent = require('superagent');
-const { JSDOM } = require('jsdom');
-const Logger = require('./logger');
+const { convert } = require('html-to-text');
+const { singular } = require('pluralize')
 
-const log = new Logger();
+function download(link, callback) {
+  superagent.get(link).end((err, data) => {
+    if (err) return callback(new Error(`Error while downloading ${link}`));
 
-function isLinkValid(link) {
-  try {
-    new URL(link);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function getTextFromChildren(parentNode) {
-  const text = []
-
-  function getText(node) {
-    if (node.nodeType === 3) {
-      text.push(node.textContent);
-      return
-    }
-
-    for (const elem of node.childNodes) {
-      getText(elem);
-    }
-  }
-
-  getText(parentNode);
-
-  return text.join(' ');
-}
-
-function getText(url, callback) {
-  superagent.get(url).end((err, res) => {
-    if (err) return callback(err);
-
-    const { body } = (new JSDOM(res.text)).window.document;
-    const text = getTextFromChildren(body);
-
-    callback(null, text)
+    callback(null, data)
   })
 }
 
-function cleanWord(word) {
-  function isLetter(char) {
-    return (char >= 'a' && char <= 'z') || (char >= 'а' && char <= 'я');
+function isWord(str) {
+  if (str.length < 2) return false;
+
+  for (const letter of str.split('')) {
+    if (letter < 'a' || letter > 'z') return false;
   }
-
-  let result = ''
-  for (const char of word.split('')) {
-    if (isLetter(char)) result += char
-  }
-  return result
+  return true;
 }
 
-function getWordsFromText(text) {
-  const dirtyWords = text.split(' ')
-  const cleanWords = []
-
-  for (let word of dirtyWords) {
-    if (!word.length) continue;
-    if (word.length > 20) continue;
-
-    word = word.toLowerCase()
-    word = cleanWord(word)
-
-    if (!word) continue
-
-    cleanWords.push(word)
-  }
-
-  return cleanWords
-}
-
-function getWordsRate(words) {
-  const rates = {}
-
-  words.forEach(word => rates[word] ? rates[word]++ : rates[word] = 1)
-
-  const result = Object.entries(rates).map(o => ({[o[0]]: o[1]}))
-  result.sort((a, b) => Object.values(b) - Object.values(a))
-
-  return result
-}
-
-function getWords(url, callback) {
-  if (!isLinkValid(url)) return callback(new Error(`Invalid URL: ${url}`))
-
-  getText(url, (err, text) => {
-    if (err) return callback(new Error(`Can not load URL: ${url}`))
-
-    const words = getWordsFromText(text);
-
-    callback(null, words)
-  })
-}
-
-function getWordsFromAllSeq(links, callback) {
+function textToWords(text) {
+  const parts = text.split(' ');
   const words = []
 
-  function iterate() {
-    const link = links.pop()
+  for (const part of parts) {
+    const clear = part.trim();
+    if (!clear) continue;
 
-    if (!link) {
-      return callback(null, words)
+    const word = clear.toLowerCase();
+    if (!isWord(word)) continue;
+
+    const wordSingular = singular(word);
+    words.push(wordSingular);
+  }
+
+  return words;
+}
+
+function getWordsFromLink(link, callback) {
+  download(link, (err, data) => {
+    if (err) return callback(err);
+
+    const text = convert(data.text)
+    const words = textToWords(text);
+
+    callback(null, words);
+  })
+}
+
+let id = 0;
+
+function loadStatistics(link, callback) {
+  console.log(`Start: ${link}`)
+
+  getWordsFromLink(link, (err, words) => {
+    if (err) return callback(err);
+
+    const statistics = calculateWordsCount(words)
+    const statisticsText = arrayToText(statistics)
+
+    const filePath = path.join(process.cwd(), `result:${id++}.txt`)
+    fs.writeFile(filePath, statisticsText, (err) => {
+      if (err) return callback(err);
+
+      callback(null, link)
+    });
+  })
+}
+
+function calculateWordsCount(words) {
+  const count = {}
+
+  words.forEach(word => count[word] ?
+    count[word]++ : count[word] = 1);
+
+  const result = Object.entries(count).map(e => ({
+    [e[0]]: e[1]
+  }))
+
+  result.sort((a, b) => Object.values(b) - Object.values(a))
+
+  return result;
+}
+
+function arrayToText(arr) {
+  let text = '';
+
+  for (const elem of arr) {
+    if (typeof elem === 'object') {
+      text += `${Object.keys(elem)}: ${Object.values(elem)}\n`;
+    }
+  }
+
+  return text;
+}
+
+function loadStatisticsParallel(links, callback) {
+  if (!links || !links.length) return process.nextTick(callback)
+
+  let finished = 0
+
+  function done(err, link) {
+    if (err) {
+      console.log(`Error: ${link}`)
+    }
+    else {
+      console.log(`OK: ${link}`)
     }
 
-    getWords(link, (err, data) => {
+    if (++finished >= links.length) {
+      callback(null)
+    }
+  }
+
+  links.forEach(link => loadStatistics(link, done))
+}
+
+function loadStatisticsSeq(links, callback) {
+  if (!links || !links.length) return process.nextTick(callback)
+
+  function iterate() {
+    const link = links.shift();
+
+    if (!link) return callback()
+
+    loadStatistics(link, (err) => {
       if (err) {
-        log.error(link)
+        console.log(`Error: ${link}`)
       }
       else {
-        log.success(link)
-        words.push(...data)
+        console.log(`OK: ${link}`)
       }
+
       iterate()
     })
   }
@@ -125,54 +142,37 @@ function getWordsFromAllSeq(links, callback) {
 }
 
 function getLinks(file, callback) {
-  if (!file) return callback(new Error('File must be specified'))
+  const filePath = path.join(process.cwd(), file)
 
-  const filePath = path.join(process.cwd(), file);
+  fs.access(filePath, (err) => {
+    if (err) return callback(new Error('File was not found'));
 
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) return callback(new Error('Error while reading file with links'));
+    fs.readFile(filePath, 'utf8', (err, data) => {
+      if (err) return callback(new Error('Error while reading file'));
 
-    const links = data.split('\n')
+      const links = data.split('\n')
 
-    callback(null, links)
-  });
-}
-
-function saveStats(stats, callback) {
-  let fileData = ''
-
-  for (const item of stats) {
-    const [key, value] = Object.entries(item)[0]
-    fileData += `${key}: ${value}\n`
-  }
-
-  fs.writeFile('stats.txt', fileData, (err) => {
-    if (err) return callback(err);
-
-    callback(null)
-  })
-}
-
-function start(file, callback) {
-  if (!file) return callback(new Error('File must be specified'))
-
-  getLinks(file, (err, links) => {
-    if (err) return callback(err)
-
-    getWordsFromAllSeq(links, (err, words) => {
-      if (err) return callback(err)
-
-      const stats = getWordsRate(words)
-      saveStats(stats, callback)
+      callback(null, links)
     })
   })
 }
 
-start(process.argv[2], (err, stats) => {
+function start(file, callback) {
+  if (!file) return callback(new Error('File was not provided'))
+
+  getLinks(file, (err, links) => {
+    if (err) return callback(err);
+
+    console.time();
+    loadStatisticsSeq(links, callback);
+  })
+}
+
+start(process.argv[2], (err) => {
   if (err) {
-    log.error(err.message)
+    console.log(`Error: ${err.message}`);
+    process.exit(1);
   }
-  else {
-    log.info(stats)
-  }
-})
+  console.timeEnd()
+  console.log('Done!')
+});
