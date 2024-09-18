@@ -3,10 +3,12 @@ const path = require('path');
 const superagent = require('superagent');
 const { convert } = require('html-to-text');
 const { singular } = require('pluralize')
-const { iterateSeries } = require('@w111zard/async')
+const { iterateSeries, parallelSeries } = require('@w111zard/async')
 
 const SEQUENTIAL = 'sequential';
 const PARALLEL = 'parallel';
+
+const MODE = PARALLEL;
 
 function download(link, callback) {
   superagent.get(link).end((err, data) => {
@@ -102,7 +104,12 @@ function arrayToText(arr) {
 
 function saveStatistics(links, callback, mode = SEQUENTIAL) {
   if (mode === SEQUENTIAL) {
+    console.log('seq')
     iterateSeries(links, calculateAndSaveStatistics, callback);
+  }
+  else if (mode === PARALLEL) {
+    console.log('pl')
+    parallelSeries(links, calculateAndSaveStatistics, callback);
   }
 }
 
@@ -128,7 +135,8 @@ function start(file, callback) {
   getLinks(file, (err, links) => {
     if (err) return callback(err);
 
-    saveStatistics(links, callback);
+    console.time()
+    saveStatistics(links, callback, MODE);
   })
 }
 
@@ -138,4 +146,5 @@ start(process.argv[2], (err) => {
     process.exit(1);
   }
   console.log('Done!')
+  console.timeEnd();
 });
