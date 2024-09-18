@@ -3,6 +3,10 @@ const path = require('path');
 const superagent = require('superagent');
 const { convert } = require('html-to-text');
 const { singular } = require('pluralize')
+const { iterateSeries } = require('@w111zard/async')
+
+const SEQUENTIAL = 'sequential';
+const PARALLEL = 'parallel';
 
 function download(link, callback) {
   superagent.get(link).end((err, data) => {
@@ -41,7 +45,7 @@ function textToWords(text) {
 
 function getWordsFromLink(link, callback) {
   download(link, (err, data) => {
-    if (err) return callback(err);
+    if (err) return callback(null, []);
 
     const text = convert(data.text)
     const words = textToWords(text);
@@ -52,9 +56,7 @@ function getWordsFromLink(link, callback) {
 
 let id = 0;
 
-function loadStatistics(link, callback) {
-  console.log(`Start: ${link}`)
-
+function calculateAndSaveStatistics(link, callback) {
   getWordsFromLink(link, (err, words) => {
     if (err) return callback(err);
 
@@ -65,6 +67,7 @@ function loadStatistics(link, callback) {
     fs.writeFile(filePath, statisticsText, (err) => {
       if (err) return callback(err);
 
+      console.log(`Finished: ${link}`)
       callback(null, link)
     });
   })
@@ -97,48 +100,10 @@ function arrayToText(arr) {
   return text;
 }
 
-function loadStatisticsParallel(links, callback) {
-  if (!links || !links.length) return process.nextTick(callback)
-
-  let finished = 0
-
-  function done(err, link) {
-    if (err) {
-      console.log(`Error: ${link}`)
-    }
-    else {
-      console.log(`OK: ${link}`)
-    }
-
-    if (++finished >= links.length) {
-      callback(null)
-    }
+function saveStatistics(links, callback, mode = SEQUENTIAL) {
+  if (mode === SEQUENTIAL) {
+    iterateSeries(links, calculateAndSaveStatistics, callback);
   }
-
-  links.forEach(link => loadStatistics(link, done))
-}
-
-function loadStatisticsSeq(links, callback) {
-  if (!links || !links.length) return process.nextTick(callback)
-
-  function iterate() {
-    const link = links.shift();
-
-    if (!link) return callback()
-
-    loadStatistics(link, (err) => {
-      if (err) {
-        console.log(`Error: ${link}`)
-      }
-      else {
-        console.log(`OK: ${link}`)
-      }
-
-      iterate()
-    })
-  }
-
-  iterate()
 }
 
 function getLinks(file, callback) {
@@ -163,8 +128,7 @@ function start(file, callback) {
   getLinks(file, (err, links) => {
     if (err) return callback(err);
 
-    console.time();
-    loadStatisticsSeq(links, callback);
+    saveStatistics(links, callback);
   })
 }
 
@@ -173,6 +137,5 @@ start(process.argv[2], (err) => {
     console.log(`Error: ${err.message}`);
     process.exit(1);
   }
-  console.timeEnd()
   console.log('Done!')
 });
