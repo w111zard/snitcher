@@ -71,11 +71,11 @@ async function saveStatistics(link, data) {
 }
 
 async function getStatistics(link) {
-    const html = await download(link);
-    const text = convert(html);
-    console.log(text);
-    const words = getWords(text);
-    return getCount(words);
+  const html = await download(link);
+  const text = convert(html);
+  console.log(text);
+  const words = getWords(text);
+  return getCount(words);
 }
 
 async function getAndSaveStatistic(link) {
@@ -92,4 +92,6 @@ async function start(file) {
   await Promise.allSettled(promises);
 }
 
-start('links.txt').catch(e => console.log(e));
+module.exports = {
+  start
+};
