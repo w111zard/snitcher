@@ -109,8 +109,16 @@ function getStatistics(link, callback) {
   });
 }
 
-function saveStatistics(link, data, callback) {
-  callback(null, data);
+function saveStatistics(link, stats, callback) {
+  const data = {
+    resource: link,
+    statistics: stats,
+  };
+
+  const file = String(Date.now()) + '.json';
+  const filePath = path.join(process.cwd(), file);
+
+  fs.writeFile(filePath, JSON.stringify(data, null, 2), callback);
 }
 
 function handleLink(link, callback) {
@@ -121,7 +129,31 @@ function handleLink(link, callback) {
   });
 }
 
+function handleLinksSequentially(links, callback) {
+  if (!links || !links.length) {
+    // Remember Zalgo?
+    return process.nextTick(() => callback(new Error('Links were not provided')));
+  }
+
+  function iterate() {
+    const currentLink = links.shift();
+    if (!currentLink) return callback();
+
+    handleLink(currentLink, (err) => {
+      if (err) {
+        console.log(`Error while processing: ${currentLink}`);
+      }
+      else {
+        console.log(`Processed: ${currentLink}`);
+      }
+      iterate();
+    });
+  }
+
+  iterate();
+}
+
 module.exports = {
   getLinks,
-  handleLink,
+  handleLinksSequentially,
 };

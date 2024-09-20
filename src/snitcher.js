@@ -9,7 +9,7 @@ function snitcher(file, callback) {
   Utils.getLinks(file, (err, links) => {
     if (err) return callback(err);
 
-    Utils.handleLink(links[0], callback);
+    Utils.handleLinksSequentially(links, callback);
   });
 }
 
