@@ -2,7 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const superagent = require('superagent');
 const { convert } = require('html-to-text');
-const {singular} = require("pluralize");
+const {singular} = require('pluralize');
 
 function isWord(str) {
   if (str.length < 2) return false;
@@ -15,7 +15,7 @@ function isWord(str) {
 
 function getWords(text) {
   const parts = text.split(' ');
-  const words = []
+  const words = [];
 
   for (const part of parts) {
     const clear = part.trim();
@@ -32,16 +32,16 @@ function getWords(text) {
 }
 
 function getCount(words) {
-  const count = {}
+  const count = {};
 
   words.forEach(word => count[word] ?
     count[word]++ : count[word] = 1);
 
   const result = Object.entries(count).map(e => ({
     [e[0]]: e[1]
-  }))
+  }));
 
-  result.sort((a, b) => Object.values(b) - Object.values(a))
+  result.sort((a, b) => Object.values(b) - Object.values(a));
 
   return result;
 }
@@ -62,16 +62,18 @@ async function download(link) {
 async function saveStatistics(link, data) {
   try {
     const str = `${link}\n` + objectsToString(data);
-    const file = String(Date.now()) + '.txt'
+    const file = String(Date.now()) + '.txt';
     await fs.writeFile(path.join(process.cwd(), 'statistics', file), str);
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
+
 }
 
 async function getStatistics(link) {
     const html = await download(link);
     const text = convert(html);
+    console.log(text);
     const words = getWords(text);
     return getCount(words);
 }
@@ -82,12 +84,12 @@ async function getAndSaveStatistic(link) {
 }
 
 async function start(file) {
-  if (!file) throw new Error('File was not provided')
+  if (!file) throw new Error('File was not provided');
 
   const links = await getLinks(file);
 
-  const promises = links.map(link => getAndSaveStatistic(link))
+  const promises = links.map(link => getAndSaveStatistic(link));
   await Promise.allSettled(promises);
 }
 
-start('links.txt').catch(e => console.log(e))
+start('links.txt').catch(e => console.log(e));
