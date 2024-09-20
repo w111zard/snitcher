@@ -1,3 +1,3 @@
-const { start } = require('./snitcher');
+const snitcher = require('./snitcher');
 
-start(process.argv[2]);
+snitcher(process.argv[2]);
