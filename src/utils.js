@@ -3,6 +3,12 @@ const path = require('path');
 const { URL } = require('url');
 const superagent = require('superagent');
 
+function removeDuplicates(data) {
+  const duplicates = {};
+  data.forEach(item => duplicates[item] = true);
+  return Object.keys(duplicates);
+}
+
 function isURL(str) {
   try {
     new URL(str);
@@ -18,12 +24,14 @@ function getLinks(file, callback) {
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) return callback(new Error('Can not read file'));
 
-    const links = data
+    const linksFromFile = data
       .split('\n')
       .map(l=> l.trim())
       .filter(l => l.length);
 
-    if (!links.length) return callback(new Error('Links were not found'));
+    if (!linksFromFile.length) return callback(new Error('Links were not found'));
+
+    const links = removeDuplicates(linksFromFile);
 
     for (const link of links) {
       if (!isURL(link)) return callback(new Error(`Invalid URL: '${link}'`));
@@ -32,7 +40,6 @@ function getLinks(file, callback) {
     callback(null, links);
   });
 }
-
 
 module.exports = {
   getLinks
