@@ -7,6 +7,7 @@ const {singular} = require('pluralize');
 
 const SEQUENTIAL = 'sequential';
 const PARALLEL = 'parallel';
+const LIMITED = 'limited';
 
 function calculateOccurrence(items) {
   const count = {};
@@ -136,11 +137,6 @@ function handleLink(link, callback) {
 }
 
 function handleLinksSequentially(links, callback) {
-  if (!links || !links.length) {
-    // Remember Zalgo?
-    return process.nextTick(() => callback(new Error('Links were not provided')));
-  }
-
   function iterate() {
     const currentLink = links.shift();
     if (!currentLink) return callback();
@@ -160,11 +156,6 @@ function handleLinksSequentially(links, callback) {
 }
 
 function handleLinksParallel(links, callback) {
-  if (!links || !links.length) {
-    // Remember Zalgo?
-    return process.nextTick(() => callback(new Error('Links were not provided')));
-  }
-
   let completed = 0;
 
   function done(err, result) {
@@ -183,10 +174,37 @@ function handleLinksParallel(links, callback) {
   links.forEach(link => handleLink(link, done));
 }
 
+function handleLinksLimitedParallel(links, concurrency, callback) {
+  let completed = 0;
+  let index = 0;
+  let running = 0;
+
+  function next() {
+    if (running < concurrency && index < links.length) {
+      const currentLink = links[index++];
+
+      handleLink(currentLink, () => {
+        running--;
+
+        if (++completed === links.length) {
+          return callback();
+        }
+
+        next();
+      });
+
+      running++;
+    }
+  }
+
+  next();
+}
+
 function handleLinks(links, callback, mode = PARALLEL) {
   switch (mode) {
     case SEQUENTIAL: return handleLinksSequentially(links, callback);
     case PARALLEL: return handleLinksParallel(links, callback);
+    case LIMITED: return handleLinksLimitedParallel(links, callback);
 
     // Remember Zalgo?
     default: return process.nextTick(() => callback(new Error('Unsupported mode')));
