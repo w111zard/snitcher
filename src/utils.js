@@ -6,6 +6,7 @@ const { convert } = require('html-to-text');
 const {singular} = require('pluralize');
 
 function calculateOccurrence(items) {
+  console.log(items);
   const count = {};
 
   items.forEach(item => count[item] ?
@@ -14,6 +15,7 @@ function calculateOccurrence(items) {
   const result = Object.entries(count).map(e => ({
     [e[0]]: e[1]
   }));
+
 
   result.sort((a, b) => Object.values(b) - Object.values(a));
 
@@ -103,7 +105,7 @@ function getStatistics(link, callback) {
     const words = getWordsFromText(text);
     const occurrence = calculateOccurrence(words);
 
-    callback(null, calculateOccurrence(occurrence));
+    callback(null, occurrence);
   });
 }
 
