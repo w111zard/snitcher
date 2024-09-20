@@ -2,34 +2,6 @@ const fs = require('fs/promises');
 const path = require('path');
 const superagent = require('superagent');
 const { convert } = require('html-to-text');
-const {singular} = require('pluralize');
-
-function isWord(str) {
-  if (str.length < 2) return false;
-
-  for (const letter of str.split('')) {
-    if (letter < 'a' || letter > 'z') return false;
-  }
-  return true;
-}
-
-function getWords(text) {
-  const parts = text.split(' ');
-  const words = [];
-
-  for (const part of parts) {
-    const clear = part.trim();
-    if (!clear) continue;
-
-    const word = clear.toLowerCase();
-    if (!isWord(word)) continue;
-
-    const wordSingular = singular(word);
-    words.push(wordSingular);
-  }
-
-  return words;
-}
 
 function getCount(words) {
   const count = {};
