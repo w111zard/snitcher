@@ -5,8 +5,10 @@ const superagent = require('superagent');
 const { convert } = require('html-to-text');
 const {singular} = require('pluralize');
 
+const SEQUENTIAL = 'sequential';
+const PARALLEL = 'parallel';
+
 function calculateOccurrence(items) {
-  console.log(items);
   const count = {};
 
   items.forEach(item => count[item] ?
@@ -118,7 +120,11 @@ function saveStatistics(link, stats, callback) {
   const file = String(Date.now()) + '.json';
   const filePath = path.join(process.cwd(), file);
 
-  fs.writeFile(filePath, JSON.stringify(data, null, 2), callback);
+  fs.writeFile(filePath, JSON.stringify(data, null, 2), (err) => {
+    if (err) return callback(err);
+
+    callback(null, data);
+  });
 }
 
 function handleLink(link, callback) {
@@ -153,7 +159,41 @@ function handleLinksSequentially(links, callback) {
   iterate();
 }
 
+function handleLinksParallel(links, callback) {
+  if (!links || !links.length) {
+    // Remember Zalgo?
+    return process.nextTick(() => callback(new Error('Links were not provided')));
+  }
+
+  let completed = 0;
+
+  function done(err, result) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      console.log(`Completed: ${result.resource}`);
+    }
+
+    if (++completed === links.length) {
+      return callback();
+    }
+  }
+
+  links.forEach(link => handleLink(link, done));
+}
+
+function handleLinks(links, callback, mode = PARALLEL) {
+  switch (mode) {
+    case SEQUENTIAL: return handleLinksSequentially(links, callback);
+    case PARALLEL: return handleLinksParallel(links, callback);
+
+    // Remember Zalgo?
+    default: return process.nextTick(() => callback(new Error('Unsupported mode')));
+  }
+}
+
 module.exports = {
   getLinks,
-  handleLinksSequentially,
+  handleLinks,
 };
