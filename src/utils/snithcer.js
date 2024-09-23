@@ -1,10 +1,12 @@
 const path = require('path');
 const fs = require('fs');
 const Utils = require('./common');
+const TaskQueue = require('./task-queue');
 
 const SEQUENTIAL = 'sequential';
 const PARALLEL = 'parallel';
 const LIMITED = 'limited';
+const TASK_QUEUE = 'task_queue';
 
 function getLinks(file, callback) {
   const filePath = path.join(process.cwd(), file);
@@ -127,11 +129,23 @@ function handleLinksLimitedParallel(links, concurrency, callback) {
   next();
 }
 
-function handleLinks(links, callback, mode = PARALLEL) {
+function handleLinksByTaskQueue(links, callback) {
+  const queue = new TaskQueue();
+  links.forEach(link => queue.push(handleLink, link));
+  queue.on('error', () => {
+    console.log('got err');
+  });
+  queue.on('complete', () => {
+    callback();
+  });
+}
+
+function handleLinks(links, callback, mode = TASK_QUEUE) {
   switch (mode) {
     case SEQUENTIAL: return handleLinksSequentially(links, callback);
     case PARALLEL: return handleLinksParallel(links, callback);
     case LIMITED: return handleLinksLimitedParallel(links, callback);
+    case TASK_QUEUE: return handleLinksByTaskQueue(links, callback);
 
     // Remember Zalgo?
     default: return process.nextTick(() => callback(new Error('Unsupported mode')));

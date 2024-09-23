@@ -1,10 +1,6 @@
 const snitcher = require('./snitcher');
 
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
-const argv = yargs(hideBin(process.argv)).argv;
-
-snitcher(argv, (err) => {
+snitcher(process.argv[2], (err) => {
   if (err) {
     return console.log(err.message);
   }
