@@ -1,15 +1,15 @@
 const { getLinks, handleLinks } = require('./utils/snithcer');
 
-function snitcher(file, callback) {
-  if (!file) {
+function snitcher(options, callback) {
+  if (!options.file) {
     // Remember Zalgo?
     return process.nextTick(() => callback(new Error('File was not provided')));
   }
 
-  getLinks(file, (err, links) => {
+  getLinks(options.file, (err, links) => {
     if (err) return callback(err);
 
-    handleLinks(links, callback);
+    handleLinks(links, options, callback);
   });
 }
 

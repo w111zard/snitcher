@@ -3,10 +3,11 @@ const fs = require('fs');
 const Utils = require('./common');
 const TaskQueue = require('./task-queue');
 
-const SEQUENTIAL = 'sequential';
-const PARALLEL = 'parallel';
-const LIMITED = 'limited';
-const TASK_QUEUE = 'task_queue';
+const SEQUENTIAL = 's';
+const PARALLEL = 'p';
+const LIMITED = 'lp';
+const TASK_QUEUE = 'tq';
+const DEFAULT_CONCURRENCY = 2;
 
 function getLinks(file, callback) {
   const filePath = path.join(process.cwd(), file);
@@ -103,10 +104,11 @@ function handleLinksParallel(links, callback) {
   links.forEach(link => handleLink(link, done));
 }
 
-function handleLinksLimitedParallel(links, concurrency, callback) {
+function handleLinksLimitedParallel(links, options, callback) {
   let completed = 0;
   let index = 0;
   let running = 0;
+  const concurrency = options.concurrency || DEFAULT_CONCURRENCY;
 
   function next() {
     if (running < concurrency && index < links.length) {
@@ -129,8 +131,8 @@ function handleLinksLimitedParallel(links, concurrency, callback) {
   next();
 }
 
-function handleLinksByTaskQueue(links, callback) {
-  const queue = new TaskQueue();
+function handleLinksByTaskQueue(links, options, callback) {
+  const queue = new TaskQueue(options.concurrency);
   links.forEach(link => queue.push(handleLink, link));
   queue.on('error', () => {
     console.log('got err');
@@ -140,7 +142,9 @@ function handleLinksByTaskQueue(links, callback) {
   });
 }
 
-function handleLinks(links, callback, mode = TASK_QUEUE) {
+function handleLinks(links, options, callback) {
+  const mode = options.mode || SEQUENTIAL;
+
   switch (mode) {
     case SEQUENTIAL: return handleLinksSequentially(links, callback);
     case PARALLEL: return handleLinksParallel(links, callback);
