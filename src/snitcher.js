@@ -1,4 +1,4 @@
-const Utils = require('./utils');
+const { getLinks, handleLinks } = require('./utils/snithcer');
 
 function snitcher(file, callback) {
   if (!file) {
@@ -6,10 +6,10 @@ function snitcher(file, callback) {
     return process.nextTick(() => callback(new Error('File was not provided')));
   }
 
-  Utils.getLinks(file, (err, links) => {
+  getLinks(file, (err, links) => {
     if (err) return callback(err);
 
-    Utils.handleLinks(links, callback);
+    handleLinks(links, callback);
   });
 }
 
