@@ -1,4 +1,5 @@
 const { executeSequentially, executeParallel, executeLimitedParallel} = require('./utils/async');
+const TaskQueue = require('./utils/task-queue');
 const Utils = require('./utils/common');
 const path = require('path');
 const fs = require('fs');
@@ -11,7 +12,7 @@ const DEFAULT_CONCURRENCY = 2;
 
 class Snitcher {
   constructor(options) {
-    this.mode = options?.mode || PARALLEL_MODE;
+    this.mode = options?.mode || TASK_QUEUE_MODE;
     this.concurrency = options?.concurrency || DEFAULT_CONCURRENCY;
     this.links = [];
   }
@@ -24,7 +25,6 @@ class Snitcher {
     this.handleLinks(callback);
   }
 
-
   handleLinks(callback) {
     switch (this.mode) {
       case SEQUENTIAL_MODE:
@@ -35,6 +35,9 @@ class Snitcher {
 
       case LIMITED_PARALLEL_MODE:
         return executeLimitedParallel(this.links, this.concurrency, this.handleLink.bind(this), callback);
+
+        case TASK_QUEUE_MODE:
+          return this.handleUsingTaskQueue.call(this, callback);
     }
   }
 
@@ -75,6 +78,17 @@ class Snitcher {
       }
 
       this.saveStatistics(link, stats, callback);
+    });
+  }
+
+  handleUsingTaskQueue(callback) {
+    const q = new TaskQueue(this.concurrency);
+    this.links.forEach(link => q.push(this.handleLink.bind(this), link));
+    q.on('error', (err) => {
+      console.log(err);
+    });
+    q.on('complete', () => {
+      callback();
     });
   }
 }
