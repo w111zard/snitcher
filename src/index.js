@@ -1,42 +1,47 @@
 #!/usr/bin/env node
 
 const Snitcher = require('./snitcher');
-const path = require('path');
-const fs = require('fs');
-const Utils = require('./utils/common');
+const { getArgs, getLinks } = require('./utils/common');
 
-function getLinks(file, callback) {
-  const filePath = path.join(process.cwd(), file);
+const { file, mode, concurrency, help } = getArgs();
 
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) return callback(new Error('Can not read file'));
-
-    const linksFromFile = data
-      .split('\n')
-      .map(l=> l.trim())
-      .filter(l => l.length);
-
-    if (!linksFromFile.length) return callback(new Error('Links were not found'));
-
-    const links = Utils.removeDuplicates(linksFromFile);
-
-    for (const link of links) {
-      if (!Utils.isURL(link)) return callback(new Error(`Invalid URL: '${link}'`));
-    }
-
-    callback(null, links);
-  });
+if (help) {
+  console.log('Usage: snitcher [options] <file>');
+  console.log(`  -m, --mode\tAsync execution mode 
+    (s - sequential, p - parallel, lp - limited parallel, tq - task queue)\n`);
+  console.log('  -c, --concurrency Maximum number of parallel async operations');
+  return process.exit(0);
 }
 
-getLinks(process.argv[2], (err, links) => {
+if (!file) {
+  console.log('Please, provide file containing links!');
+  return process.exit(1);
+}
+
+if (mode && !Snitcher.getModes()[mode]) {
+  console.log('Invalid mode');
+  return process.exit(1);
+}
+
+if (concurrency && concurrency < 1) {
+  console.log('Concurrency must be greater than 0');
+  return process.exit(1);
+}
+
+getLinks(file, (err, links) => {
   if (err) {
     console.log(err.message);
     process.exit(1);
   }
 
-  const snitcher = new Snitcher();
+  const snitcher = new Snitcher({ mode, concurrency });
   snitcher.process(links, (err) => {
-    console.log(err);
-    console.log('Done!');
+    if (err) {
+      console.log('Error:');
+      console.log(err);
+    }
+    else {
+      console.log('Done!');
+    }
   });
 });

@@ -12,7 +12,7 @@ const DEFAULT_CONCURRENCY = 2;
 
 class Snitcher {
   constructor(options) {
-    this.mode = options?.mode || TASK_QUEUE_MODE;
+    this.mode = options?.mode || SEQUENTIAL_MODE;
     this.concurrency = options?.concurrency || DEFAULT_CONCURRENCY;
     this.links = [];
   }
@@ -90,6 +90,15 @@ class Snitcher {
     q.on('complete', () => {
       callback();
     });
+  }
+
+  static getModes() {
+    return {
+      [SEQUENTIAL_MODE]: 'sequential',
+      [PARALLEL_MODE]: 'parallel',
+      [LIMITED_PARALLEL_MODE]: 'limited parallel',
+      [TASK_QUEUE_MODE]: 'using task queue',
+    };
   }
 }
 

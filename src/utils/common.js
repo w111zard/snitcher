@@ -2,6 +2,8 @@ const { URL } = require('url');
 const superagent = require('superagent');
 const { convert } = require('html-to-text');
 const {singular} = require('pluralize');
+const path = require('path');
+const fs = require('fs');
 
 function calculateOccurrence(items) {
   const count = {};
@@ -73,6 +75,41 @@ function download(link, callback) {
   });
 }
 
+function getLinks(file, callback) {
+  const filePath = path.join(process.cwd(), file);
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return callback(new Error('Can not read file'));
+
+    const linksFromFile = data
+      .split('\n')
+      .map(l=> l.trim())
+      .filter(l => l.length);
+
+    if (!linksFromFile.length) return callback(new Error('Links were not found'));
+
+    const links = removeDuplicates(linksFromFile);
+
+    for (const link of links) {
+      if (!isURL(link)) return callback(new Error(`Invalid URL: '${link}'`));
+    }
+
+    callback(null, links);
+  });
+}
+
+function getArgs() {
+  const yargs = require('yargs/yargs');
+  const { hideBin } = require('yargs/helpers');
+  const argv = yargs(hideBin(process.argv)).argv;
+
+  return {
+    file: argv?._[0],
+    mode: argv?.mode || argv?.m,
+    concurrency: argv?.concurrency || argv?.c,
+    help: argv?.h || argv?.help,
+  };
+}
 module.exports = {
   calculateOccurrence,
   isWord,
@@ -81,4 +118,6 @@ module.exports = {
   removeDuplicates,
   isURL,
   download,
+  getLinks,
+  getArgs,
 };
