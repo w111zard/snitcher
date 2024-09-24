@@ -1,36 +1,42 @@
 #!/usr/bin/env node
-const snitcher = require('./snitcher');
 
-function readArguments() {
-  const yargs = require('yargs/yargs');
-  const { hideBin } = require('yargs/helpers');
-  const argv = yargs(hideBin(process.argv)).argv;
+const Snitcher = require('./snitcher');
+const path = require('path');
+const fs = require('fs');
+const Utils = require('./utils/common');
 
-  const options = {};
+function getLinks(file, callback) {
+  const filePath = path.join(process.cwd(), file);
 
-  const file = argv?._[0];
-  if (!file) {
-    console.log('File was not provided!');
-    process.exit(1);
-  }
-  options.file = file;
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return callback(new Error('Can not read file'));
 
-  const mode = argv.m || argv.mode;
-  if (mode) {
-    options.mode = mode;
-  }
+    const linksFromFile = data
+      .split('\n')
+      .map(l=> l.trim())
+      .filter(l => l.length);
 
-  const concurrency = argv.concurrency;
-  if (concurrency) {
-    options.concurrency = concurrency;
-  }
+    if (!linksFromFile.length) return callback(new Error('Links were not found'));
 
-  return options;
+    const links = Utils.removeDuplicates(linksFromFile);
+
+    for (const link of links) {
+      if (!Utils.isURL(link)) return callback(new Error(`Invalid URL: '${link}'`));
+    }
+
+    callback(null, links);
+  });
 }
 
-snitcher(readArguments(), (err) => {
+getLinks(process.argv[2], (err, links) => {
   if (err) {
-    return console.log(err.message);
+    console.log(err.message);
+    process.exit(1);
   }
-  console.log('Done!');
+
+  const snitcher = new Snitcher();
+  snitcher.process(links, (err) => {
+    console.log(err);
+    console.log('Done!');
+  });
 });
