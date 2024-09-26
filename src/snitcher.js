@@ -8,7 +8,7 @@ const SEQUENTIAL_MODE = 's';
 const PARALLEL_MODE = 'p';
 const LIMITED_PARALLEL_MODE = 'lp';
 const TASK_QUEUE_MODE = 'tq';
-const DEFAULT_CONCURRENCY = 2;
+const DEFAULT_CONCURRENCY = 4;
 
 class Snitcher {
   constructor(options) {
