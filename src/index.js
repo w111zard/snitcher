@@ -2,9 +2,10 @@
 
 const Snitcher = require('./snitcher');
 const { getArgs, getLinks , resolveFilePath } = require('./utils/common');
+const fs = require('fs');
 
 function start() {
-  const { file, mode, concurrency, help } = getArgs();
+  const { file, mode, concurrency, destination, help } = getArgs();
 
   if (help) {
     console.log('Usage: snitcher [options] <file>');
@@ -17,6 +18,15 @@ function start() {
   if (!file) {
     console.log('Please, provide file containing links!');
     return process.exit(1);
+  }
+
+  if (destination) {
+    try {
+      fs.accessSync(destination);
+    } catch {
+      console.log('Invalid destination');
+      return process.exit(1);
+    }
   }
 
   if (mode && !Snitcher.getModes()[mode]) {
@@ -35,7 +45,12 @@ function start() {
       process.exit(1);
     }
 
-    const snitcher = new Snitcher({ mode, concurrency });
+    const snitcher = new Snitcher({
+      mode,
+      concurrency,
+      destination
+    });
+
     snitcher.process(links, (err) => {
       if (err) {
         console.log('Error:');

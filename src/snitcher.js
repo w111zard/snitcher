@@ -14,6 +14,7 @@ class Snitcher {
   constructor(options) {
     this.mode = options?.mode || SEQUENTIAL_MODE;
     this.concurrency = options?.concurrency || DEFAULT_CONCURRENCY;
+    this.destination = options?.destination || path.resolve(process.cwd());
     this.links = [];
   }
 
@@ -58,7 +59,7 @@ class Snitcher {
     };
 
     const file = String(Date.now()) + '.json';
-    const filePath = path.join(process.cwd(), file);
+    const filePath = path.resolve(this.destination, file);
 
     fs.writeFile(filePath, JSON.stringify(data, null, 2), (err) => {
       if (err) return callback(err);

@@ -105,6 +105,7 @@ function getArgs() {
     file: argv?._[0],
     mode: argv?.mode || argv?.m,
     concurrency: argv?.concurrency || argv?.c,
+    destination: argv?.destination || argv?.d,
     help: argv?.h || argv?.help,
   };
 }
