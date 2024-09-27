@@ -5,6 +5,11 @@ I wrote this while I'm studying book *Node.js Design Patterns*
 This program demonstrates different async control flow using callbacks
 (sequential iteration, parallel execution, limited parallel execution)
 
+# What does it do?
+
+Program read the file containing links on web resources. For each link it counts the words occurrence and
+save this statistics to the file
+
 # Installation
 
 ```sh
