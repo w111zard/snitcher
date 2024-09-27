@@ -1,20 +1,20 @@
 const chalk = require('chalk');
 
 class Logger {
-  success(message) {
-    console.log(chalk.green('[SUCCESS]:'), message);
+  success() {
+    console.log(chalk.green('[SUCCESS]:'), ...arguments);
   }
 
-  info(message) {
-    console.log(chalk.blue('[INFO]:'), message);
+  info() {
+    console.log(chalk.blue('[INFO]:'), ...arguments);
   }
 
-  warn(message) {
-    console.log(chalk.yellow('[WARN]:'), message);
+  warn() {
+    console.log(chalk.yellow('[WARN]:'), ...arguments);
   }
 
-  error(message) {
-    console.log(chalk.red('[ERROR]:'), message);
+  error() {
+    console.log(chalk.red('[ERROR]:'), ...arguments);
   }
 }
 

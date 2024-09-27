@@ -3,6 +3,7 @@ const TaskQueue = require('./utils/task-queue');
 const Utils = require('./utils/common');
 const path = require('path');
 const fs = require('fs');
+const emoji = require('node-emoji');
 
 const SEQUENTIAL_MODE = 's';
 const PARALLEL_MODE = 'p';
@@ -30,12 +31,16 @@ class Snitcher {
   handleLinks(callback) {
     switch (this.mode) {
       case SEQUENTIAL_MODE:
+        this.logger.info(emoji.get('rocket'), 'Started using sequential iteration pattern');
         return executeSequentially(this.links, this.handleLink.bind(this), callback);
 
       case PARALLEL_MODE:
+        this.logger.info(emoji.get('rocket'), 'Started using parallel execution pattern');
         return executeParallel(this.links, this.handleLink.bind(this), callback);
 
       case LIMITED_PARALLEL_MODE:
+        this.logger.info(emoji.get('rocket'), 'Started using limited parallel execution ' +
+          'pattern with concurrency of', this.concurrency);
         return executeLimitedParallel(this.links, this.concurrency, this.handleLink.bind(this), callback);
 
         case TASK_QUEUE_MODE:
@@ -65,17 +70,18 @@ class Snitcher {
     fs.writeFile(filePath, JSON.stringify(data, null, 2), (err) => {
       if (err) return callback(err);
 
+      this.logger.success(`${emoji.get('white_check_mark')} ${link.slice(0, 80)}`);
       console.log(`Finished: ${link.slice(0, 80)}`);
       callback(null, data);
     });
   }
 
   handleLink(link, callback) {
-    console.log(`Processing: ${link.slice(0, 80)}`);
+    this.logger.info(`${emoji.get('hammer_and_wrench')} Processing: ${link.slice(0, 80)}...`);
 
     this.getStatistics(link, (err, stats) => {
       if (err) {
-        console.log(`Error: ${link.slice(0, 80)}`);
+        this.logger.error(`${emoji.get('cross_mark')} ${link.slice(0, 80)}...`);
         return callback(err);
       }
 

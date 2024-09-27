@@ -4,6 +4,7 @@ const Snitcher = require('./snitcher');
 const Logger = require('./logger');
 const { getArgs, getLinks , resolveFilePath } = require('./utils/common');
 const fs = require('fs');
+const emoji = require('node-emoji');
 
 function start() {
   const { file, mode, concurrency, destination, help } = getArgs();
@@ -15,6 +16,7 @@ function start() {
     log.info(`  -m, --mode\tAsync execution mode
     (s - sequential, p - parallel, lp - limited parallel, tq - task queue)\n`);
     log.info('  -c, --concurrency Maximum number of parallel async operations');
+    log.info('  -d, --destination Destination for result files');
     return process.exit(0);
   }
 
@@ -60,7 +62,7 @@ function start() {
         log.error(err);
       }
       else {
-        log.success('Done!');
+        log.success(emoji.get('checkered_flag'), 'Done!');
       }
     });
   });
