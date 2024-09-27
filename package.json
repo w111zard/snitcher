@@ -2,11 +2,11 @@
   "name": "snitcher",
   "version": "1.0.0",
   "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js"
+  "bin": {
+    "snitcher": "./src/index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Denis Golosko",
   "license": "ISC",
   "description": "",
   "dependencies": {
