@@ -33,13 +33,10 @@ Output may look like:
 [INFO]: 🚀 Started using sequential iteration pattern
 [INFO]: 🛠 Processing: https://nodejs.org/en...
 [SUCCESS]: ✅ https://nodejs.org/en
-Finished: https://nodejs.org/en
 [INFO]: 🛠 Processing: https://github.com/w111zard/snitcher...
 [SUCCESS]: ✅ https://github.com/w111zard/snitcher
-Finished: https://github.com/w111zard/snitcher
 [INFO]: 🛠 Processing: https://www.npmjs.com/package/chalk...
 [SUCCESS]: ✅ https://www.npmjs.com/package/chalk
-Finished: https://www.npmjs.com/package/chalk
 [SUCCESS]: 🏁 Done!
 ```
 
