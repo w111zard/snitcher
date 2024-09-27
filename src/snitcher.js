@@ -71,7 +71,6 @@ class Snitcher {
       if (err) return callback(err);
 
       this.logger.success(`${emoji.get('white_check_mark')} ${link.slice(0, 80)}`);
-      console.log(`Finished: ${link.slice(0, 80)}`);
       callback(null, data);
     });
   }
