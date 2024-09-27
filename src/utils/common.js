@@ -76,9 +76,7 @@ function download(link, callback) {
 }
 
 function getLinks(file, callback) {
-  const filePath = path.join(process.cwd(), file);
-
-  fs.readFile(filePath, 'utf8', (err, data) => {
+  fs.readFile(file, 'utf8', (err, data) => {
     if (err) return callback(new Error('Can not read file'));
 
     const linksFromFile = data
@@ -110,6 +108,14 @@ function getArgs() {
     help: argv?.h || argv?.help,
   };
 }
+
+function resolveFilePath(file) {
+  if (path.isAbsolute(file))
+    return path.resolve(file);
+
+  return path.resolve(process.cwd(), file);
+}
+
 module.exports = {
   calculateOccurrence,
   isWord,
@@ -120,4 +126,5 @@ module.exports = {
   download,
   getLinks,
   getArgs,
+  resolveFilePath,
 };

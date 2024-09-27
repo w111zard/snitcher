@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 const Snitcher = require('./snitcher');
-const { getArgs, getLinks } = require('./utils/common');
+const { getArgs, getLinks , resolveFilePath } = require('./utils/common');
 
 function start() {
   const { file, mode, concurrency, help } = getArgs();
 
   if (help) {
     console.log('Usage: snitcher [options] <file>');
-    console.log(`  -m, --mode\tAsync execution mode 
+    console.log(`  -m, --mode\tAsync execution mode
     (s - sequential, p - parallel, lp - limited parallel, tq - task queue)\n`);
     console.log('  -c, --concurrency Maximum number of parallel async operations');
     return process.exit(0);
@@ -29,7 +29,7 @@ function start() {
     return process.exit(1);
   }
 
-  getLinks(file, (err, links) => {
+  getLinks(resolveFilePath(file), (err, links) => {
     if (err) {
       console.log(err.message);
       process.exit(1);
