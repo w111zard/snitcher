@@ -15,6 +15,7 @@ class Snitcher {
     this.mode = options?.mode || SEQUENTIAL_MODE;
     this.concurrency = options?.concurrency || DEFAULT_CONCURRENCY;
     this.destination = options?.destination || path.resolve(process.cwd());
+    this.logger = options?.logger || console;
     this.links = [];
   }
 
