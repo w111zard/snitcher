@@ -63,4 +63,11 @@ function start() {
   });
 }
 
-start();
+// start();
+
+const Logger = require('./logger');
+const logger = new Logger();
+logger.info('My message');
+logger.success('My message');
+logger.warn('My message');
+logger.error('My message');

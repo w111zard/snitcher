@@ -2,18 +2,19 @@ const chalk = require('chalk');
 
 class Logger {
   success(message) {
+    console.log(chalk.green('[SUCCESS]:'), message);
   }
 
-  info() {
-
+  info(message) {
+    console.log(chalk.blue('[INFO]:'), message);
   }
 
-  warn() {
-
+  warn(message) {
+    console.log(chalk.yellow('[WARN]:'), message);
   }
 
-  error() {
-
+  error(message) {
+    console.log(chalk.red('[ERROR]:'), message);
   }
 }
 
